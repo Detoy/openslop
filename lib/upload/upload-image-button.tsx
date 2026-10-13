@@ -2,18 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Loader2 } from "@/components/ui/icon";
+import type { UploadTarget } from "./pending-uploads";
 import { useImageUpload } from "./use-image-upload";
 
 export function UploadImageButton({
+	feeds,
 	onUpload,
 	disabled = false,
 	className,
 }: {
+	feeds: UploadTarget;
 	onUpload: (url: string) => void;
 	disabled?: boolean;
 	className?: string;
 }) {
 	const { openPicker, uploading, inputElement } = useImageUpload({
+		feeds,
 		onUpload: ([url]) => {
 			if (url) onUpload(url);
 		},

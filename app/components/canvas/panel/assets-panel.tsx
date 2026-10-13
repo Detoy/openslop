@@ -73,6 +73,7 @@ function CharactersCard() {
 function ReferencesCard() {
 	const { urls, add, remove } = useReferenceImages();
 	const { openPicker, uploading, inputElement } = useImageUpload({
+		feeds: "project",
 		multiple: true,
 		onUpload: add,
 	});

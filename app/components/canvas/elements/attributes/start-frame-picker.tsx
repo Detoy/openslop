@@ -89,6 +89,7 @@ export function StartFramePicker({
 			[UPLOADED_FRAME_ATTR]: upload,
 		});
 	const { openPicker, uploading, inputElement } = useImageUpload({
+		feeds: { element: element.id },
 		onUpload: ([url]) => url && setFrame(url, url),
 	});
 	const summary = usesUpload

@@ -216,7 +216,11 @@ export default function ComposerCopilot({
 		inputElement,
 		dropZoneProps,
 		isDraggingOver,
-	} = useImageUpload({ multiple: true, onUpload: addReferenceImages });
+	} = useImageUpload({
+		feeds: "project",
+		multiple: true,
+		onUpload: addReferenceImages,
+	});
 	const hasText = value.trim().length > 0;
 	const pasting = intent === "script";
 	const activeTemplate = pasting ? undefined : template;

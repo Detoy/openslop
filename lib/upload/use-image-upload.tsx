@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { toastError } from "@/lib/toast-error";
 import { partitionImageFiles } from "./image-files";
+import { usePendingUploads } from "./pending-uploads-provider";
+import type { UploadTarget } from "./pending-uploads";
 import { uploadImage } from "./upload-image";
 
 const carriesFiles = (data: DataTransfer) => data.types.includes("Files");
@@ -26,12 +28,16 @@ function useBlockStrayFileDrops() {
 }
 
 export function useImageUpload({
+	feeds,
 	onUpload,
 	multiple = false,
 }: {
+	/** What the upload becomes, so generate controls wait for it. */
+	feeds: UploadTarget;
 	onUpload: (urls: string[]) => void;
 	multiple?: boolean;
 }) {
+	const pendingUploads = usePendingUploads();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [uploadingCount, setUploadingCount] = useState(0);
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -47,6 +53,7 @@ export function useImageUpload({
 		if (files.length === 0) return;
 
 		setUploadingCount((count) => count + files.length);
+		const release = pendingUploads.begin(feeds);
 		try {
 			const results = await Promise.allSettled(files.map(uploadImage));
 			const urls: string[] = [];
@@ -56,6 +63,7 @@ export function useImageUpload({
 			}
 			if (urls.length > 0) onUpload(urls);
 		} finally {
+			release();
 			setUploadingCount((count) => count - files.length);
 		}
 	};
