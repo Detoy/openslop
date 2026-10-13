@@ -61,7 +61,6 @@ export function GenerateButton({
 }: {
 	status: GenerationStatus;
 	hasResult: boolean;
-	/** An upload this element would generate from is still in flight. */
 	uploading: boolean;
 	disabled: boolean;
 	onGenerate: () => void;

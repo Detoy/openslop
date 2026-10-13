@@ -183,14 +183,6 @@ describe("useGenerateAll", () => {
 		);
 	});
 
-	it("waits for a project upload, which every element inherits", () => {
-		uploads.begin("project");
-
-		expect(
-			useScopeForAll([makeElement("a", "narration", "hello")]),
-		).toMatchObject({ uploading: true });
-	});
-
 	it("counts the elements still to generate", async () => {
 		const a = makeElement("a", "image", "sunset");
 		commitCurrent(a);

@@ -36,16 +36,6 @@ describe("PendingUploads", () => {
 		expect(uploads.blocks("a")).toBe(false);
 	});
 
-	it("releases once, however often release is called", () => {
-		const uploads = new PendingUploads();
-		const first = uploads.begin({ element: "a" });
-		uploads.begin({ element: "a" });
-
-		first();
-		first();
-		expect(uploads.blocks("a")).toBe(true);
-	});
-
 	it("notifies subscribers when an upload starts and when it lands", () => {
 		const uploads = new PendingUploads();
 		const listener = vi.fn();

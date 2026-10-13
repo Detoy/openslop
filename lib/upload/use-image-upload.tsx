@@ -32,7 +32,6 @@ export function useImageUpload({
 	onUpload,
 	multiple = false,
 }: {
-	/** What the upload becomes, so generate controls wait for it. */
 	feeds: UploadTarget;
 	onUpload: (urls: string[]) => void;
 	multiple?: boolean;
