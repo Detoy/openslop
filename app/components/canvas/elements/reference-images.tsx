@@ -2,7 +2,7 @@
 
 import { ImagePlus } from "@/components/ui/icon";
 import type { UploadTarget } from "@/lib/upload/pending-uploads";
-import { useImageUpload } from "@/lib/upload/use-image-upload";
+import { useFileUpload } from "@/lib/upload/use-file-upload";
 import { AddAssetTile } from "./add-asset-tile";
 import { useReferenceImages } from "../hooks/use-reference-images";
 import { ReferenceTile } from "./asset-tiles";
@@ -19,7 +19,8 @@ export function ReferenceImagePicker({
 	onAdd: (urls: string[]) => void;
 	onRemove: (index: number) => void;
 }) {
-	const { openPicker, uploading, inputElement } = useImageUpload({
+	const { openPicker, uploading, inputElement } = useFileUpload({
+		kind: "image",
 		feeds,
 		multiple: true,
 		onUpload: onAdd,
