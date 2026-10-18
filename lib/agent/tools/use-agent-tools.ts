@@ -19,7 +19,9 @@ import { staleReason } from "@/lib/generation/stale-reason";
 import { useBuildContext } from "@/lib/generation/use-build-context";
 import { createConnector } from "@/lib/connectors/factory";
 import { applyRefineOps } from "@/lib/script/refine/apply-ops";
+import { setElementModels } from "@/lib/canvas/element-models";
 import { useProjectStoreHandle } from "@/lib/project/project-store-provider";
+import { useAccountStoreHandle } from "@/lib/user/account-store-provider";
 import type { ScriptSource } from "@/lib/script/prompt/build";
 import { streamScript } from "@/lib/script/stream-script";
 import { elementImage } from "../element-image";
@@ -30,6 +32,7 @@ import { executeToolCall } from "./registry";
 export function useAgentTools() {
 	const editor = useSlateStatic();
 	const store = useProjectStoreHandle();
+	const account = useAccountStoreHandle();
 	const queue = useGenerationQueue();
 	const buildContext = useBuildContext();
 
@@ -79,10 +82,19 @@ export function useAgentTools() {
 				writeScript: (brief) => draftScript({ kind: "brief", brief }),
 				adaptScript: (script, notes) =>
 					draftScript({ kind: "adapt", script, notes }),
+				modelChain: () => ({
+					project: store.getState().models,
+					account: account.getState().models,
+				}),
+				isConnected: (provider) =>
+					account
+						.getState()
+						.providerKeys.some((key) => key.provider === provider),
+				setElementModels: (ids, model) => setElementModels(editor, ids, model),
 				...pick(store.getState(), PROJECT_SETTERS),
 			};
 			return executeToolCall(call, ctx);
 		},
-		[editor, store, queue, buildContext],
+		[editor, store, account, queue, buildContext],
 	);
 }

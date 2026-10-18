@@ -58,6 +58,10 @@ const context = (over: Partial<AgentToolContext> = {}): AgentToolContext => ({
 	setTitle: () => {},
 	updateVideoSettings: () => {},
 	updateScriptSettings: () => {},
+	updateModels: () => {},
+	modelChain: () => ({}),
+	isConnected: () => true,
+	setElementModels: () => {},
 	...over,
 });
 
@@ -684,6 +688,97 @@ describe("executeToolCall", () => {
 	});
 });
 
+describe("model tools", () => {
+	const run = (toolName: string, input: unknown, over = {}) =>
+		executeToolCall({ toolName, input }, context(over));
+
+	it("lists each type's models with what they do best, which are connected, and the default new elements get", async () => {
+		const outcome = await run(
+			"list_models",
+			{},
+			{
+				modelChain: () => ({
+					project: { video: { provider: "openslop", model: "Slop Video v1" } },
+				}),
+				isConnected: (provider: string) => provider === "openslop",
+			},
+		);
+		const output = String(outcome.ok && outcome.output);
+
+		expect(output).toContain(
+			"Videos (type video). New elements get Slop Video v1 from openslop, the project default.",
+		);
+		expect(output).toContain(
+			"- Slop Video v1 from openslop. cost high, speed medium. Best for animation and anything that isn't live action.",
+		);
+		expect(output).toContain(
+			"- Kling 3 Omni from runware. not connected. Best for live action.",
+		);
+	});
+
+	it("sets the default for every type the model's group covers, as the models panel does", async () => {
+		const updates: unknown[] = [];
+		const outcome = await run(
+			"set_default_model",
+			{ type: "voice", provider: "openslop", model: "Slop TTS v1" },
+			{ updateModels: (models: unknown) => void updates.push(models) },
+		);
+
+		expect(outcome.ok).toBe(true);
+		expect(updates).toEqual([
+			{
+				voice: { provider: "openslop", model: "Slop TTS v1" },
+				tts: { provider: "openslop", model: "Slop TTS v1" },
+			},
+		]);
+	});
+
+	it.each([
+		[
+			"set_default_model",
+			{ type: "video", provider: "openslop", model: "Slop Video v9" },
+			/"openslop" has no video model "Slop Video v9"/,
+		],
+		[
+			"set_default_model",
+			{ type: "video", provider: "runware", model: "Kling 3 Omni" },
+			/not connected Runware/,
+		],
+		[
+			"set_element_model",
+			{ ids: ["v1"], provider: "runware", model: "Kling 3 Omni" },
+			/not connected Runware/,
+		],
+	])(
+		"%s refuses a model the user cannot generate with, writing nothing",
+		async (toolName, input, error) => {
+			const writes: unknown[] = [];
+			const outcome = await run(toolName, input, {
+				isConnected: (provider: string) => provider === "openslop",
+				updateModels: (models: unknown) => void writes.push(models),
+				setElementModels: (...args: unknown[]) => void writes.push(args),
+			});
+
+			expect(outcome.ok || outcome.errorText).toMatch(error);
+			expect(writes).toEqual([]);
+		},
+	);
+
+	it("moves the named elements onto the model", async () => {
+		const moves: unknown[] = [];
+		const outcome = await run(
+			"set_element_model",
+			{ ids: ["v1", "v2"], provider: "openslop", model: "Slop Video v1" },
+			{ setElementModels: (...args: unknown[]) => void moves.push(args) },
+		);
+
+		expect(outcome.ok && outcome.output).toContain("Moved 2 elements");
+		expect(moves).toEqual([
+			[["v1", "v2"], { provider: "openslop", model: "Slop Video v1" }],
+		]);
+	});
+});
+
 describe("SLOPPY_TOOLS", () => {
 	it("offers the model exactly the tools the editor can run", () => {
 		expect(Object.keys(SLOPPY_TOOLS)).toEqual([
@@ -700,6 +795,9 @@ describe("SLOPPY_TOOLS", () => {
 			"measure_element_lengths",
 			"fit_durations",
 			"set_title",
+			"list_models",
+			"set_default_model",
+			"set_element_model",
 		]);
 	});
 

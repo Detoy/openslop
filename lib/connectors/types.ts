@@ -47,6 +47,8 @@ export type ModelMeta = {
 export type ModelEntry = ModelMeta & {
 	/** The id the provider's own API takes. */
 	id: string;
+	/** What it does best, for a model that stands out from its siblings. */
+	description?: string;
 };
 
 /** A video model also says which output resolutions the vendor renders it at, its default first. */
