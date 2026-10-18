@@ -10,7 +10,8 @@ import {
 	isGenerationActive,
 	type GenerationStatus,
 } from "@/lib/generation/snapshots";
-import { usePendingUploadsSelector } from "@/lib/upload/pending-uploads-provider";
+import type { GenerationHold } from "@/lib/generation/generation-holds";
+import { useGenerationHoldsSelector } from "@/lib/generation/generation-holds-provider";
 import { useElementGeneration } from "./element-generation-context";
 
 export function StaleIndicator({ reason }: { reason: string }) {
@@ -39,33 +40,33 @@ const GENERATE_ICON: Record<GenerationStatus, ReactNode> = {
 function generateLabel(
 	status: GenerationStatus,
 	hasResult: boolean,
-	uploading: boolean,
+	hold: GenerationHold | undefined,
 ) {
 	if (status === "generating") return "Generating…";
 	if (status === "queued") return "Queued";
-	if (uploading) return "Uploading…";
+	if (hold) return hold.label;
 	return hasResult ? "Regenerate" : "Generate";
 }
 
-function generateTooltip(hasResult: boolean, uploading: boolean) {
-	if (uploading) return "Waiting for an upload to finish";
+function generateTooltip(hasResult: boolean, hold: GenerationHold | undefined) {
+	if (hold) return hold.reason;
 	return hasResult ? "Regenerate this element" : "Generate this element";
 }
 
 export function GenerateButton({
 	status,
 	hasResult,
-	uploading,
+	hold,
 	disabled,
 	onGenerate,
 }: {
 	status: GenerationStatus;
 	hasResult: boolean;
-	uploading: boolean;
+	hold: GenerationHold | undefined;
 	disabled: boolean;
 	onGenerate: () => void;
 }) {
-	const label = generateLabel(status, hasResult, uploading);
+	const label = generateLabel(status, hasResult, hold);
 	return (
 		<Button
 			type="button"
@@ -73,11 +74,11 @@ export function GenerateButton({
 			size="sm"
 			className="shrink-0"
 			disabled={disabled}
-			unavailable={uploading}
+			unavailable={hold !== undefined}
 			onMouseDown={(e) => e.preventDefault()}
 			onClick={onGenerate}
 			aria-label={label}
-			tooltip={generateTooltip(hasResult, uploading)}
+			tooltip={generateTooltip(hasResult, hold)}
 		>
 			{GENERATE_ICON[status]}
 			{label}
@@ -88,14 +89,12 @@ export function GenerateButton({
 export function ElementGenerateButton() {
 	const { node, hasPrompt, hasResult, status, generate } =
 		useElementGeneration();
-	const uploading = usePendingUploadsSelector((uploads) =>
-		uploads.blocks(node.id),
-	);
+	const hold = useGenerationHoldsSelector((holds) => holds.holdOn(node.id));
 	return (
 		<GenerateButton
 			status={status}
 			hasResult={hasResult}
-			uploading={uploading}
+			hold={hold}
 			disabled={!hasPrompt || isGenerationActive(status)}
 			onGenerate={generate}
 		/>

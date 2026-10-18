@@ -1,7 +1,7 @@
 "use client";
 
 import { ImagePlus } from "@/components/ui/icon";
-import type { UploadTarget } from "@/lib/upload/pending-uploads";
+import type { HoldTarget } from "@/lib/generation/generation-holds";
 import { useFileUpload } from "@/lib/upload/use-file-upload";
 import { AddAssetTile } from "./add-asset-tile";
 import { useReferenceImages } from "../hooks/use-reference-images";
@@ -14,7 +14,7 @@ export function ReferenceImagePicker({
 	onAdd,
 	onRemove,
 }: {
-	feeds: UploadTarget;
+	feeds: HoldTarget;
 	urls: string[];
 	onAdd: (urls: string[]) => void;
 	onRemove: (index: number) => void;

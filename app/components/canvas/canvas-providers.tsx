@@ -5,7 +5,7 @@ import { Slate } from "slate-react";
 import { composeProviders } from "@/lib/components/compose-providers";
 import { LiveGraphProvider } from "@/lib/generation/live-graph-provider";
 import { CanvasHistoryProvider } from "@/lib/project/canvas-history-provider";
-import { PendingUploadsProvider } from "@/lib/upload/pending-uploads-provider";
+import { GenerationHoldsProvider } from "@/lib/generation/generation-holds-provider";
 import { RenderLayoutProvider } from "../player/render-layout-context";
 import { BottomViewProvider } from "../player/bottom-view-context";
 import { PlayerPlacementProvider } from "../player/player-placement-context";
@@ -20,7 +20,7 @@ import { AssetEditProvider } from "./elements/character/asset-edit-provider";
 import { useEditorSession } from "./hooks/use-editor-session";
 
 const CanvasScopedProviders = composeProviders(
-	PendingUploadsProvider,
+	GenerationHoldsProvider,
 	LiveGraphProvider,
 	RenderLayoutProvider,
 	PlayerPlacementProvider,

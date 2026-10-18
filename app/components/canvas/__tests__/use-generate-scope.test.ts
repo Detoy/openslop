@@ -5,7 +5,10 @@ import {
 	type ConnectorRegistry,
 } from "@/lib/connectors/registry";
 import { GenerationQueue } from "@/lib/generation/queue";
-import { PendingUploads } from "@/lib/upload/pending-uploads";
+import {
+	GenerationHolds,
+	type GenerationHold,
+} from "@/lib/generation/generation-holds";
 import { buildCtx } from "@/lib/generation/__tests__/_context";
 import type { GenerationNode } from "@/lib/generation/graph";
 import { buildNode, GenerationGraph } from "@/lib/generation/generation-graph";
@@ -37,12 +40,18 @@ vi.mock("@/lib/generation/generation-queue-provider", () => ({
 	useQueueSelector: <T>(selector: (q: GenerationQueue) => T) => selector(queue),
 }));
 
-let uploads: PendingUploads;
+let holds: GenerationHolds;
 
-vi.mock("@/lib/upload/pending-uploads-provider", () => ({
-	usePendingUploadsSelector: <T>(selector: (u: PendingUploads) => T) =>
-		selector(uploads),
+vi.mock("@/lib/generation/generation-holds-provider", () => ({
+	useGenerationHoldsSelector: <T>(selector: (h: GenerationHolds) => T) =>
+		selector(holds),
 }));
+
+const holdOn = (target: GenerationHold["target"]): GenerationHold => ({
+	target,
+	label: "Busy…",
+	reason: "Waiting for it to finish",
+});
 
 // The hook under test is about which elements get queued, so bind a real
 // context rather than standing up the config and project providers.
@@ -101,7 +110,7 @@ let enqueueGraphSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
 	vi.clearAllMocks();
 	queue = new GenerationQueue();
-	uploads = new PendingUploads();
+	holds = new GenerationHolds();
 	enqueueGraphSpy = vi
 		.spyOn(queue, "enqueueGraph")
 		.mockImplementation(() => {});
@@ -164,23 +173,32 @@ describe("useGenerateAll", () => {
 		expect(useScopeForAll(elements)).toMatchObject({
 			empty: false,
 			active: false,
-			uploading: false,
+			hold: undefined,
 			pending: 0,
 			stale: 0,
 		});
 	});
 
-	it("waits while an upload for an element in scope is in flight", () => {
-		const release = uploads.begin({ element: "a" });
+	it("waits while an element in scope is held", () => {
+		const release = holds.begin(holdOn({ element: "a" }));
 
 		expect(useScopeForAll([makeElement("a", "image", "sunset")])).toMatchObject(
-			{ uploading: true },
+			{ hold: { reason: "Waiting for it to finish" } },
 		);
 
 		release();
 		expect(useScopeForAll([makeElement("a", "image", "sunset")])).toMatchObject(
-			{ uploading: false },
+			{ hold: undefined },
 		);
+	});
+
+	it("waits on a project hold before there is anything to generate", () => {
+		holds.begin(holdOn("project"));
+
+		expect(useScopeForAll([])).toMatchObject({
+			empty: true,
+			hold: { reason: "Waiting for it to finish" },
+		});
 	});
 
 	it("counts the elements still to generate", async () => {
@@ -238,11 +256,11 @@ describe("useGenerateScope", () => {
 		expect(enqueuedIds()).toEqual([]);
 	});
 
-	it("ignores an upload for an element outside the scope", () => {
-		uploads.begin({ element: "c" });
+	it("ignores a hold on an element outside the scope", () => {
+		holds.begin(holdOn({ element: "c" }));
 
 		expect(useGenerateScope(() => sceneOne, "scene")).toMatchObject({
-			uploading: false,
+			hold: undefined,
 		});
 	});
 
@@ -268,11 +286,11 @@ describe("scope description", () => {
 		);
 	});
 
-	it("says it is waiting for an upload in scope", () => {
-		uploads.begin({ element: "a" });
+	it("says why it is held", () => {
+		holds.begin(holdOn({ element: "a" }));
 
 		expect(useDescription([makeElement("a", "image", "sunset")], "scene")).toBe(
-			"Waiting for an upload in this scene…",
+			"Waiting for it to finish",
 		);
 	});
 

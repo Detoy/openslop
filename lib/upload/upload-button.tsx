@@ -7,7 +7,7 @@ import {
 	Video,
 	type IconComponent,
 } from "@/components/ui/icon";
-import type { UploadTarget } from "./pending-uploads";
+import type { HoldTarget } from "@/lib/generation/generation-holds";
 import type { UploadKind } from "./upload-files";
 import { useFileUpload } from "./use-file-upload";
 
@@ -24,7 +24,7 @@ export function UploadButton({
 	className,
 }: {
 	kind: UploadKind;
-	feeds: UploadTarget;
+	feeds: HoldTarget;
 	onUpload: (url: string) => void | Promise<void>;
 	disabled?: boolean;
 	className?: string;

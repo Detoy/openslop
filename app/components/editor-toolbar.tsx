@@ -14,10 +14,8 @@ import { useProject } from "@/lib/project/use-project";
 import { useGenerateAll } from "./canvas/hooks/use-generate-all";
 import {
 	countPhrase,
-	NOTHING_TO_GENERATE,
 	type GenerateScope,
 } from "./canvas/hooks/use-generate-scope";
-import { useSloppy } from "./sloppy/sloppy-provider";
 import { ExportButton } from "./player/export-button";
 import editorStyles from "./editor.module.css";
 
@@ -63,28 +61,22 @@ function Breadcrumbs() {
 	);
 }
 
-function getGenerateLabel(
-	loading: boolean,
-	generating: boolean,
-	scope: GenerateScope,
-): string {
-	if (loading) return "Writing…";
+function getGenerateLabel(generating: boolean, scope: GenerateScope): string {
+	if (scope.hold) return scope.hold.label;
 	if (generating) return "Generating…";
-	if (scope.uploading) return "Uploading…";
 	if (scope.empty) return "Generate all";
 	if (scope.pending === 0) return "All generated";
 	return countPhrase(scope);
 }
 
 function EditorToolbarComponent() {
-	const { loading } = useSloppy();
 	const scope = useGenerateAll();
 	const queue = useGenerationQueue();
 	const generating = useQueueSelector((q) => q.isBusy());
-	const busy = loading || generating;
-	const generateLabel = getGenerateLabel(loading, generating, scope);
+	const busy = generating || scope.hold !== undefined;
+	const generateLabel = getGenerateLabel(generating, scope);
 	const current = !scope.empty && scope.pending === 0;
-	const unavailable = busy || scope.uploading || scope.pending === 0;
+	const unavailable = busy || scope.pending === 0;
 
 	return (
 		<div
@@ -109,7 +101,7 @@ function EditorToolbarComponent() {
 						size="sm"
 						className="shrink-0 sm:px-4"
 						aria-label={generateLabel}
-						tooltip={loading ? NOTHING_TO_GENERATE : scope.description}
+						tooltip={scope.description}
 						tooltipSide="bottom"
 						unavailable={unavailable}
 						onClick={scope.run}

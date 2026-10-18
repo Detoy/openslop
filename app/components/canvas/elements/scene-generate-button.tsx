@@ -22,7 +22,10 @@ export function SceneGenerateButton({ scene }: { scene: Scene }) {
 	const select = useCallback(() => scene.children, [scene.children]);
 	const scope = useGenerateScope(select, "scene");
 	const unavailable =
-		scope.empty || scope.active || scope.uploading || scope.pending === 0;
+		scope.empty ||
+		scope.active ||
+		scope.hold !== undefined ||
+		scope.pending === 0;
 
 	return (
 		<TooltipIconButton

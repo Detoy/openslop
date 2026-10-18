@@ -3,7 +3,7 @@ import { element } from "@/lib/canvas/__tests__/_assets";
 import type { ContentElement, GeneratedElement } from "@/lib/canvas/types";
 import type { GenerationNode } from "@/lib/generation/graph";
 import { GenerationQueue } from "@/lib/generation/queue";
-import { PendingUploads } from "@/lib/upload/pending-uploads";
+import { GenerationHolds } from "@/lib/generation/generation-holds";
 import { needsGeneration } from "@/lib/generation/staleness";
 import { buildNode, createGraphFor } from "@/lib/generation/generation-graph";
 import { buildCtx } from "@/lib/generation/__tests__/_context";
@@ -37,10 +37,10 @@ vi.mock("@/lib/generation/generation-queue-provider", () => ({
 	useQueueSelector: <T>(selector: (q: GenerationQueue) => T) => selector(queue),
 }));
 
-const uploads = new PendingUploads();
-vi.mock("@/lib/upload/pending-uploads-provider", () => ({
-	usePendingUploadsSelector: <T>(selector: (u: PendingUploads) => T) =>
-		selector(uploads),
+const holds = new GenerationHolds();
+vi.mock("@/lib/generation/generation-holds-provider", () => ({
+	useGenerationHoldsSelector: <T>(selector: (h: GenerationHolds) => T) =>
+		selector(holds),
 }));
 
 let canvas: ContentElement[] = [];

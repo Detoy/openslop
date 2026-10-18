@@ -11,7 +11,8 @@ import { isGenerationActive } from "@/lib/generation/snapshots";
 import { isNodeStale, needsGeneration } from "@/lib/generation/staleness";
 import { useBuildContext } from "@/lib/generation/use-build-context";
 import { useLiveNodes } from "@/lib/generation/use-live-nodes";
-import { usePendingUploadsSelector } from "@/lib/upload/pending-uploads-provider";
+import type { GenerationHold } from "@/lib/generation/generation-holds";
+import { useGenerationHoldsSelector } from "@/lib/generation/generation-holds-provider";
 import type { ContentElement } from "@/lib/canvas/types";
 
 export type GenerateScope = {
@@ -19,8 +20,8 @@ export type GenerateScope = {
 	empty: boolean;
 	/** Something in scope is queued or running.  */
 	active: boolean;
-	/** An upload that something in scope would generate from is still in flight. */
-	uploading: boolean;
+	/** Work in flight that something in scope would generate from. */
+	hold: GenerationHold | undefined;
 	/** Elements with no result, or whose result no longer matches its inputs. */
 	pending: number;
 	/** Pending elements that already have a result, so a run redoes them. */
@@ -35,7 +36,7 @@ export type GenerateSubject = "project" | "scene";
 
 export type GenerateCounts = Pick<
 	GenerateScope,
-	"empty" | "active" | "uploading" | "pending" | "stale"
+	"empty" | "active" | "hold" | "pending" | "stale"
 >;
 
 const noun = (count: number) => (count === 1 ? "element" : "elements");
@@ -49,12 +50,12 @@ export const countPhrase = ({ pending, stale }: GenerateCounts): string =>
 	`${stale === pending ? "Regenerate" : "Generate"} ${pending} ${noun(pending)}`;
 
 function describe(
-	{ empty, active, uploading, pending, stale }: GenerateCounts,
+	{ empty, active, hold, pending, stale }: GenerateCounts,
 	subject: GenerateSubject,
 ): string {
+	if (hold) return hold.reason;
 	if (empty) return NOTHING_TO_GENERATE;
 	if (active) return `Generating this ${subject}…`;
-	if (uploading) return `Waiting for an upload in this ${subject}…`;
 	if (pending === 0) return `Everything in this ${subject} is generated`;
 
 	const fresh = pending - stale;
@@ -86,8 +87,8 @@ export function useGenerateScope(
 			isGenerationActive(q.getElementSnapshot(node.id).status),
 		),
 	);
-	const uploading = usePendingUploadsSelector((uploads) =>
-		nodes.some((node) => uploads.blocks(node.id)),
+	const hold = useGenerationHoldsSelector((holds) =>
+		holds.holdOn(...nodes.map((node) => node.id)),
 	);
 	const pending = useQueueSelector(
 		(q) => nodes.filter((node) => needsGeneration(node, q)).length,
@@ -106,13 +107,7 @@ export function useGenerateScope(
 		);
 	}, [queue, elements, buildContext]);
 
-	const counts = {
-		empty: nodes.length === 0,
-		active,
-		uploading,
-		pending,
-		stale,
-	};
+	const counts = { empty: nodes.length === 0, active, hold, pending, stale };
 
 	return { ...counts, run, description: describe(counts, subject) };
 }

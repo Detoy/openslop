@@ -16,6 +16,8 @@ import { DRAFTING_TOOLS, type AgentToolName } from "@/lib/agent/tools/registry";
 import { useAgentTools } from "@/lib/agent/tools/use-agent-tools";
 import { createRequiredContext } from "@/lib/components/create-required-context";
 import { useConfig } from "@/lib/config/config-provider";
+import type { GenerationHold } from "@/lib/generation/generation-holds";
+import { useHoldGeneration } from "@/lib/generation/generation-holds-provider";
 import { toastError } from "@/lib/toast-error";
 
 type SloppyControl = {
@@ -33,6 +35,12 @@ const [SloppyControlContext, useSloppy] =
 	createRequiredContext<SloppyControl>("SloppyProvider");
 
 export { useSloppyMessages, useSloppy };
+
+const WRITING: GenerationHold = {
+	target: "project",
+	label: "Writing…",
+	reason: "Waiting for Sloppy to finish",
+};
 
 /**
  * The stored transcript. Null until it is known, which is what draws the
@@ -115,6 +123,7 @@ export function SloppyProvider({ children }: { children: ReactNode }) {
 		status === "streaming" ||
 		hasPendingToolCall(messages);
 	const writingScript = hasPendingToolCall(messages, DRAFTING_TOOLS);
+	useHoldGeneration(working ? WRITING : undefined);
 	const control = useMemo<SloppyControl>(
 		() => ({
 			send: (message) => {

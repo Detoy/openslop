@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toastError } from "@/lib/toast-error";
-import { usePendingUploads } from "./pending-uploads-provider";
-import type { UploadTarget } from "./pending-uploads";
+import type { HoldTarget } from "@/lib/generation/generation-holds";
+import { useGenerationHolds } from "@/lib/generation/generation-holds-provider";
 import { uploadFile } from "./upload-file";
 import { partitionFiles, type UploadKind } from "./upload-files";
 
@@ -34,11 +34,11 @@ export function useFileUpload({
 	multiple = false,
 }: {
 	kind: UploadKind;
-	feeds: UploadTarget;
+	feeds: HoldTarget;
 	onUpload: (urls: string[]) => void | Promise<void>;
 	multiple?: boolean;
 }) {
-	const pendingUploads = usePendingUploads();
+	const holds = useGenerationHolds();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [uploadingCount, setUploadingCount] = useState(0);
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -54,7 +54,11 @@ export function useFileUpload({
 		if (files.length === 0) return;
 
 		setUploadingCount((count) => count + files.length);
-		const release = pendingUploads.begin(feeds);
+		const release = holds.begin({
+			target: feeds,
+			label: "Uploading…",
+			reason: "Waiting for an upload to finish",
+		});
 		try {
 			const results = await Promise.allSettled(
 				files.map((file) => uploadFile(kind, file)),

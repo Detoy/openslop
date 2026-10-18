@@ -2,7 +2,7 @@ import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { createEditor, type Descendant } from "slate";
 import { Slate, withReact } from "slate-react";
-import { PendingUploadsProvider } from "@/lib/upload/pending-uploads-provider";
+import { GenerationHoldsProvider } from "@/lib/generation/generation-holds-provider";
 
 /** A canvas with no editable surface, as an asset dialog sees it. */
 export function mountOnCanvas(children: Descendant[] = []) {
@@ -17,7 +17,7 @@ export function mountOnCanvas(children: Descendant[] = []) {
 			act(() =>
 				root.render(
 					<Slate editor={editor} initialValue={editor.children}>
-						<PendingUploadsProvider>{ui}</PendingUploadsProvider>
+						<GenerationHoldsProvider>{ui}</GenerationHoldsProvider>
 					</Slate>,
 				),
 			),
