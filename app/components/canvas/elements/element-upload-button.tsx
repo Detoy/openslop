@@ -1,6 +1,5 @@
 "use client";
 
-import { useGenerationQueue } from "@/lib/generation/generation-queue-provider";
 import { isGenerationActive } from "@/lib/generation/snapshots";
 import { UploadButton } from "@/lib/upload/upload-button";
 import type { UploadKind } from "@/lib/upload/upload-files";
@@ -16,19 +15,14 @@ function ElementUploadButton({
 	kind: UploadKind;
 	className?: string;
 }) {
-	const queue = useGenerationQueue();
-	const { node, status } = useElementGeneration();
+	const { status, commitUpload } = useElementGeneration();
 
 	return (
 		<UploadButton
 			kind={kind}
 			className={cn("shrink-0", className)}
 			disabled={isGenerationActive(status)}
-			onUpload={async (url) =>
-				queue.commitResult(node, await uploadedResult(kind, url), {
-					pinned: true,
-				})
-			}
+			onUpload={async (url) => commitUpload(await uploadedResult(kind, url))}
 		/>
 	);
 }

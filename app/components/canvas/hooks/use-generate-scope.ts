@@ -1,16 +1,18 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import type { Editor } from "slate";
-import { useSlateStatic } from "slate-react";
+import { useSlateSelector, useSlateStatic } from "slate-react";
+import { shallow } from "zustand/shallow";
 import {
 	useGenerationQueue,
 	useQueueSelector,
 } from "@/lib/generation/generation-queue-provider";
-import { hasPrompt } from "@/lib/generation/graph";
+import { hasPrompt, type GenerationNode } from "@/lib/generation/graph";
 import { buildNodes } from "@/lib/generation/generation-graph";
+import { useResolveNode } from "@/lib/generation/live-graph-provider";
+import type { GenerationQueue } from "@/lib/generation/queue";
 import { isGenerationActive } from "@/lib/generation/snapshots";
 import { isNodeStale, needsGeneration } from "@/lib/generation/staleness";
 import { useBuildContext } from "@/lib/generation/use-build-context";
-import { useLiveNodes } from "@/lib/generation/use-live-nodes";
 import type { ContentElement } from "@/lib/canvas/types";
 
 export type GenerateScope = {
@@ -36,6 +38,19 @@ export type GenerateCounts = Pick<
 >;
 
 const noun = (count: number) => (count === 1 ? "element" : "elements");
+
+const countsOf = (
+	nodes: GenerationNode[],
+	queue: GenerationQueue,
+): GenerateCounts => ({
+	empty: nodes.length === 0,
+	active: nodes.some((node) =>
+		isGenerationActive(queue.getElementSnapshot(node.id).status),
+	),
+	pending: nodes.filter((node) => needsGeneration(node, queue)).length,
+	// Always a subset of `pending`, so `fresh` in describe cannot go negative.
+	stale: nodes.filter((node) => isNodeStale(node, queue)).length,
+});
 
 /** Covers every reason there is no work: no elements, none with a prompt, or a
  * script still being written. */
@@ -72,23 +87,20 @@ export function useGenerateScope(
 	const queue = useGenerationQueue();
 	const editor = useSlateStatic();
 	const buildContext = useBuildContext();
+	const resolve = useResolveNode();
 
 	const elements = useCallback(() => select(editor), [select, editor]);
-	const live = useLiveNodes(elements);
-	const nodes = useMemo(() => live.filter(hasPrompt), [live]);
-
-	const active = useQueueSelector((q) =>
-		nodes.some((node) =>
-			isGenerationActive(q.getElementSnapshot(node.id).status),
-		),
+	const counts = useCallback(
+		(q: GenerationQueue) =>
+			countsOf(elements().map(resolve).filter(hasPrompt), q),
+		[elements, resolve],
 	);
-	const pending = useQueueSelector(
-		(q) => nodes.filter((node) => needsGeneration(node, q)).length,
-	);
-	// Always a subset of `pending`, so `fresh` below cannot go negative.
-	const stale = useQueueSelector(
-		(q) => nodes.filter((node) => isNodeStale(node, q)).length,
-	);
+	const read = useCallback(() => counts(queue), [counts, queue]);
+	// An edit re-reads every count; the queue re-reads the three it can change, so those are taken from there.
+	const { empty } = useSlateSelector(read, shallow);
+	const active = useQueueSelector((q) => counts(q).active);
+	const pending = useQueueSelector((q) => counts(q).pending);
+	const stale = useQueueSelector((q) => counts(q).stale);
 
 	// Built again at the click, for the same reason as a single element's generate.
 	const run = useCallback(() => {
@@ -99,7 +111,7 @@ export function useGenerateScope(
 		);
 	}, [queue, elements, buildContext]);
 
-	const counts = { empty: nodes.length === 0, active, pending, stale };
+	const current = { empty, active, pending, stale };
 
-	return { ...counts, run, description: describe(counts, subject) };
+	return { ...current, run, description: describe(current, subject) };
 }
