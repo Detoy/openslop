@@ -8,7 +8,11 @@ import {
 	vi,
 } from "vitest";
 import type { ElementSnapshot } from "@/lib/generation/snapshots";
-import { AUTOSAVE_DEBOUNCE_MS, createAutosaver } from "../autosave";
+import {
+	AUTOSAVE_DEBOUNCE_MS,
+	AUTOSAVE_RETRY_CAP_MS,
+	createAutosaver,
+} from "../autosave";
 import type { SavedProject } from "../saved-project";
 import {
 	createProjectStore,
@@ -281,5 +285,107 @@ describe("createAutosaver", () => {
 
 		expect(onError).toHaveBeenCalledWith(boom);
 		expect(onSaved).not.toHaveBeenCalled();
+	});
+
+	describe("after a failed save", () => {
+		const failOnce = async () => {
+			saveProject.mockRejectedValueOnce(new Error("offline"));
+			const autosaver = build();
+			edit();
+			autosaver.schedule();
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS);
+			expect(saveProject).toHaveBeenCalledTimes(1);
+			expect(onError).toHaveBeenCalledTimes(1);
+			return autosaver;
+		};
+
+		const expectNoMoreSaves = async (count: number) => {
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_RETRY_CAP_MS);
+			expect(saveProject).toHaveBeenCalledTimes(count);
+		};
+
+		it("tries again by itself and reports when the save lands", async () => {
+			await failOnce();
+
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS);
+
+			expect(saveProject).toHaveBeenCalledTimes(2);
+			expect(onSaved).toHaveBeenCalledTimes(1);
+			expect(onError).toHaveBeenCalledTimes(1);
+		});
+
+		it("waits twice as long after each failure, up to the cap", async () => {
+			const failedAt: number[] = [];
+			onError.mockImplementation(() => failedAt.push(Date.now()));
+			saveProject.mockRejectedValue(new Error("offline"));
+			await failOnce();
+
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_RETRY_CAP_MS * 3);
+
+			expect(failedAt.slice(1).map((at, i) => at - failedAt[i])).toEqual([
+				AUTOSAVE_DEBOUNCE_MS,
+				AUTOSAVE_DEBOUNCE_MS * 2,
+				AUTOSAVE_DEBOUNCE_MS * 4,
+				AUTOSAVE_DEBOUNCE_MS * 8,
+				AUTOSAVE_RETRY_CAP_MS,
+				AUTOSAVE_RETRY_CAP_MS,
+			]);
+			expect(onSaved).not.toHaveBeenCalled();
+		});
+
+		it("flush runs the waiting retry at once", async () => {
+			const autosaver = await failOnce();
+
+			autosaver.flush();
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(saveProject).toHaveBeenCalledTimes(2);
+			expect(onSaved).toHaveBeenCalledTimes(1);
+			await expectNoMoreSaves(2);
+		});
+
+		it("a new edit takes the retry's place and saves the latest document", async () => {
+			const autosaver = await failOnce();
+
+			edit();
+			autosaver.schedule();
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS);
+
+			expect(saveProject).toHaveBeenCalledTimes(2);
+			expect(saveProject).toHaveBeenLastCalledWith(
+				projectId,
+				expect.objectContaining({ store: extractStoreSnapshot(store) }),
+			);
+			await expectNoMoreSaves(2);
+		});
+
+		it("suspend retries at once, then holds", async () => {
+			const autosaver = await failOnce();
+
+			autosaver.suspend();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(saveProject).toHaveBeenCalledTimes(2);
+			expect(onSaved).toHaveBeenCalledTimes(1);
+
+			edit();
+			autosaver.schedule();
+			await expectNoMoreSaves(2);
+		});
+
+		it("does not retry while suspended, and resume saves it", async () => {
+			saveProject.mockRejectedValue(new Error("offline"));
+			const autosaver = await failOnce();
+
+			autosaver.suspend();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(saveProject).toHaveBeenCalledTimes(2);
+			await expectNoMoreSaves(2);
+
+			saveProject.mockResolvedValue(undefined);
+			autosaver.resume();
+			await vi.advanceTimersByTimeAsync(AUTOSAVE_DEBOUNCE_MS);
+			expect(saveProject).toHaveBeenCalledTimes(3);
+			expect(onSaved).toHaveBeenCalledTimes(1);
+		});
 	});
 });

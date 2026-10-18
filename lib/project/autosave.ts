@@ -1,4 +1,3 @@
-import debounce from "lodash/debounce";
 import isEqual from "lodash/isEqual";
 import PQueue from "p-queue";
 import { createEmitter } from "@/lib/store/emitter";
@@ -6,6 +5,7 @@ import { saveProject, type SaveProjectInput } from "./api";
 import type { ProjectDocument } from "./project-document";
 
 export const AUTOSAVE_DEBOUNCE_MS = 2000;
+export const AUTOSAVE_RETRY_CAP_MS = 30_000;
 
 export interface AutosaverOptions {
 	projectId: string;
@@ -21,7 +21,7 @@ export interface AutosaverOptions {
 export interface Autosaver {
 	/** Coalesce this change with any others into one debounced save. */
 	schedule: () => void;
-	/** Run any pending save immediately. */
+	/** Run any waiting save immediately. */
 	flush: () => void;
 	/** Persist any pending edit, then hold every later save until {@link resume}. */
 	suspend: () => void;
@@ -37,6 +37,9 @@ export interface Autosaver {
  * The document it is built from counts as saved, and a save whose payload
  * matches the last one is dropped, so an untouched project never saves itself
  * on open or reports "Saved" for an echo of what it loaded.
+ *
+ * A failed save is reported and tried again on a doubling delay, so a blip on
+ * the last save before the tab closes does not lose the edits behind it.
  */
 export function createAutosaver({
 	projectId,
@@ -54,41 +57,57 @@ export function createAutosaver({
 
 	let lastSaved = buildInput();
 	let suspended = false;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let retryDelay = AUTOSAVE_DEBOUNCE_MS;
+
+	const wait = (ms: number) => {
+		clearTimeout(timer);
+		timer = setTimeout(save, ms);
+	};
 
 	const persist = async (input: SaveProjectInput) => {
 		if (isEqual(input, lastSaved)) return;
 		try {
 			await saveProject(projectId, input);
 			lastSaved = input;
+			retryDelay = AUTOSAVE_DEBOUNCE_MS;
 			onSaved();
 			projectSaved.notify(input);
 		} catch (error) {
 			console.error("Autosave failed", error);
+			if (timer === undefined && !suspended) wait(retryDelay);
+			retryDelay = Math.min(retryDelay * 2, AUTOSAVE_RETRY_CAP_MS);
 			onError(error);
 		}
 	};
 
 	/**
-	 * Reads the payload as the debounce fires, not as the save runs, so a save
+	 * Reads the payload as the timer fires, not as the save runs, so a save
 	 * queued behind a slow one still writes the state it was scheduled for.
 	 */
-	const schedule = debounce(() => {
+	const save = () => {
+		clearTimeout(timer);
+		timer = undefined;
 		if (suspended) return;
 		const input = buildInput();
 		queue.clear();
 		void queue.add(() => persist(input));
-	}, AUTOSAVE_DEBOUNCE_MS);
+	};
+
+	const flush = () => {
+		if (timer !== undefined) save();
+	};
 
 	return {
-		schedule,
-		flush: schedule.flush,
+		schedule: () => wait(AUTOSAVE_DEBOUNCE_MS),
+		flush,
 		suspend: () => {
-			schedule.flush();
+			flush();
 			suspended = true;
 		},
 		resume: () => {
 			suspended = false;
-			schedule();
+			wait(AUTOSAVE_DEBOUNCE_MS);
 		},
 		onProjectSaved: projectSaved.subscribe,
 	};
