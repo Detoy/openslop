@@ -20,6 +20,7 @@ import { AssetBundle } from "@/lib/api/asset-bundle";
 import { RunwareImage } from "../image/runware";
 
 const MODEL = "bytedance:seedream@5.0-lite";
+const MUSE = "meta:muse@image";
 
 describe("RunwareImage", () => {
 	beforeEach(() => {
@@ -44,7 +45,6 @@ describe("RunwareImage", () => {
 			outputFormat: "JPG",
 			numberResults: 1,
 			includeCost: true,
-			referenceImages: undefined,
 		});
 		expect(mockDisconnect).toHaveBeenCalled();
 	});
@@ -64,10 +64,44 @@ describe("RunwareImage", () => {
 		expect(mockImageInference).toHaveBeenCalledWith(
 			expect.objectContaining({
 				positivePrompt: "Red pets a cat",
-				referenceImages: ["https://img/red.png", "https://img/style.png"],
+				inputs: {
+					referenceImages: ["https://img/red.png", "https://img/style.png"],
+				},
 			}),
 		);
 	});
+
+	it.each([
+		[
+			{ width: 2560, height: 1440 },
+			{ width: 2048, height: 1152 },
+		],
+		[
+			{ width: 1440, height: 2560 },
+			{ width: 1152, height: 2048 },
+		],
+		[
+			{ width: 1000, height: 1000 },
+			{ width: 1600, height: 1600 },
+		],
+	])(
+		"renders Muse at the frame nearest in shape to %o",
+		async (requested, frame) => {
+			mockImageInference.mockResolvedValue([
+				{ imageBase64Data: "abc", cost: 0.01 },
+			]);
+
+			await new RunwareImage("test-key").generate({
+				prompt: "a cat",
+				model: MUSE,
+				...requested,
+			});
+
+			expect(mockImageInference).toHaveBeenCalledWith(
+				expect.objectContaining(frame),
+			);
+		},
+	);
 
 	it("asks for the format it labels the bytes with", async () => {
 		mockImageInference.mockResolvedValue([
