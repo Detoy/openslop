@@ -6,6 +6,7 @@ import { createRequiredContext } from "@/lib/components/create-required-context"
 
 type LoadedProject = {
 	projectId: string;
+	initialScript: string;
 	initialTranscript: SloppyMessage[];
 };
 
@@ -13,16 +14,20 @@ const [LoadedProjectContext, useLoadedProject] =
 	createRequiredContext<LoadedProject>("ProjectProvider");
 
 export const useProjectId = () => useLoadedProject().projectId;
+export const useInitialScript = () => useLoadedProject().initialScript;
 export const useInitialTranscript = () => useLoadedProject().initialTranscript;
 
-/** What the page loaded and no store below owns: the row's id and its Sloppy transcript. */
+/** What the page loaded and no store below owns. */
 export function ProjectProvider({
 	projectId,
+	initialScript,
 	initialTranscript,
 	children,
 }: LoadedProject & { children: ReactNode }) {
 	return (
-		<LoadedProjectContext value={{ projectId, initialTranscript }}>
+		<LoadedProjectContext
+			value={{ projectId, initialScript, initialTranscript }}
+		>
 			{children}
 		</LoadedProjectContext>
 	);

@@ -1,7 +1,6 @@
 import type { CanvasEditor } from "@/lib/canvas/types";
 import type { CanvasHistory } from "@/lib/project/canvas-history";
-import { useProjectId } from "@/lib/project/project-provider";
-import { useInitialScript } from "@/lib/script/script-provider";
+import { useInitialScript, useProjectId } from "@/lib/project/project-provider";
 import { useCanvasVersions } from "./use-canvas-versions";
 import { useEditorSetup } from "./use-editor-setup";
 
