@@ -235,7 +235,7 @@ lib/
   project/       每个项目的 Zustand store、自动保存、持久化
   render/        场景布局和渲染客户端
   templates/     编辑器里提供的提示词模板
-  upload/        客户端图片上传
+  upload/        客户端文件上传（图片、视频、音频）
   supabase/      浏览器端/服务端的 Supabase 客户端
 remotion/        Remotion 入口和合成
 supabase/        数据库迁移

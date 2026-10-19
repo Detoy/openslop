@@ -235,7 +235,7 @@ lib/
   project/       プロジェクトごとの Zustand ストア、自動保存、永続化
   render/        シーンのレイアウトとレンダークライアント
   templates/     コンポーザーで提供するプロンプトテンプレート
-  upload/        クライアント側の画像アップロード
+  upload/        クライアント側のファイルアップロード（画像、動画、音声）
   supabase/      ブラウザ用・サーバー用の Supabase クライアント
 remotion/        Remotion のエントリーポイントとコンポジション
 supabase/        データベースのマイグレーション

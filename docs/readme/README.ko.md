@@ -235,7 +235,7 @@ lib/
   project/       프로젝트별 Zustand 스토어, 자동 저장, 영속화
   render/        장면 레이아웃과 렌더 클라이언트
   templates/     컴포저에서 제공하는 프롬프트 템플릿
-  upload/        클라이언트 측 이미지 업로드
+  upload/        클라이언트 측 파일 업로드 (이미지, 동영상, 오디오)
   supabase/      브라우저/서버 Supabase 클라이언트
 remotion/        Remotion 진입점과 컴포지션
 supabase/        데이터베이스 마이그레이션

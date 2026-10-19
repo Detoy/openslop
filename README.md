@@ -247,7 +247,7 @@ lib/
   project/       Per-project Zustand store, autosave, persistence
   render/        Scene layout and render client
   templates/     Prompt templates offered in the composer
-  upload/        Client-side image upload
+  upload/        Client-side file upload (image, video, audio)
   supabase/      Browser/server Supabase clients
 remotion/        Remotion entry point and compositions
 supabase/        Database migrations

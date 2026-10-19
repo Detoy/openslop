@@ -235,7 +235,7 @@ lib/
   project/       Store Zustand por projeto, salvamento automático, persistência
   render/        Layout de cenas e cliente de renderização
   templates/     Templates de prompt oferecidos no composer
-  upload/        Upload de imagens no cliente
+  upload/        Upload de arquivos no cliente (imagem, vídeo, áudio)
   supabase/      Clientes Supabase para navegador/servidor
 remotion/        Ponto de entrada e composições do Remotion
 supabase/        Migrações do banco de dados
