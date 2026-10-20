@@ -19,6 +19,7 @@ import {
 } from "./elements/character-mention-menu";
 import { renderCanvasElement } from "./render-canvas-element";
 import { useCharacterMention } from "./hooks/use-character-mention";
+import { useCanvasKeys } from "./hooks/use-canvas-keys";
 
 const renderElement = renderCanvasElement({
 	Scene: SortableScene,
@@ -37,8 +38,16 @@ export default function Canvas() {
 		handleDragEnd,
 		handleDragCancel,
 	} = useDragAndDrop(editor);
-	const { mention, options, active, listboxId, select, dismiss, onKeyDown } =
-		useCharacterMention();
+	const {
+		mention,
+		options,
+		active,
+		listboxId,
+		select,
+		dismiss,
+		onKeyDown: onMentionKeyDown,
+	} = useCharacterMention();
+	const onCanvasKeyDown = useCanvasKeys();
 
 	const activeBlock = useMemo(
 		() =>
@@ -60,14 +69,16 @@ export default function Canvas() {
 					items={sceneItems}
 					strategy={verticalListSortingStrategy}
 				>
-					<Editable
-						placeholder="Start typing your story…"
-						renderElement={renderElement}
-						onKeyDown={onKeyDown}
-						aria-controls={mention && listboxId}
-						aria-activedescendant={mention && optionId(listboxId, active)}
-						className="font-body text-body leading-relaxed focus-ring"
-					/>
+					<div onKeyDown={onCanvasKeyDown}>
+						<Editable
+							placeholder="Start typing your story…"
+							renderElement={renderElement}
+							onKeyDown={onMentionKeyDown}
+							aria-controls={mention && listboxId}
+							aria-activedescendant={mention && optionId(listboxId, active)}
+							className="font-body text-body leading-relaxed focus-ring"
+						/>
+					</div>
 				</SortableContext>
 				{mention && (
 					<CharacterMentionMenu

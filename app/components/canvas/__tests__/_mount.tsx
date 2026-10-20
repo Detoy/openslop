@@ -4,8 +4,10 @@ import { createEditor, type Descendant } from "slate";
 import { Slate, withReact } from "slate-react";
 
 /** A canvas with no editable surface, as an asset dialog sees it. */
-export function mountOnCanvas(children: Descendant[] = []) {
-	const editor = withReact(createEditor());
+export function mountOnCanvas(
+	children: Descendant[] = [],
+	editor = withReact(createEditor()),
+) {
 	editor.defaultModels = () => ({});
 	editor.children = children;
 	const container = document.body.appendChild(document.createElement("div"));

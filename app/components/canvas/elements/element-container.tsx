@@ -165,6 +165,7 @@ export function ElementContainer({
 						<div
 							className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-2 select-none"
 							contentEditable={false}
+							data-element-actions
 						>
 							<ElementStaleIndicator />
 							{config.actions?.map((Action, index) => (
