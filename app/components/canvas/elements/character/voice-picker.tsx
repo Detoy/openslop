@@ -6,7 +6,6 @@ import { Check, Pause, Play } from "@/components/ui/icon";
 import { TooltipIconButton } from "@/components/ui/icon-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { toast } from "sonner";
 import {
 	ConfigureModelsItem,
 	ModelSelect,
@@ -18,8 +17,8 @@ import type {
 	VoiceSearchParams,
 } from "@/lib/connectors/types";
 import { createConnector } from "@/lib/connectors/factory";
-import { stringifyError } from "@/lib/errors";
 import { useVoiceSearch } from "@/lib/connectors/tts/use-voice-search";
+import { toastError } from "@/lib/toast-error";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "./fields";
 
@@ -40,7 +39,7 @@ function PreviewPlayButton({ load }: { load: () => Promise<string> }) {
 			try {
 				audio.src = await load();
 			} catch (error) {
-				toast.error(`Couldn't load the preview: ${stringifyError(error)}`);
+				toastError(error, "Couldn't load the preview");
 				return;
 			} finally {
 				setLoading(false);

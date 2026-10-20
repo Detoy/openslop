@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { stringifyError } from "../errors";
+import { errorMessage } from "../errors";
 import { getUser } from "./auth";
 import { refuseOverBudget } from "./budget";
 import { hasApiAccess, MissingProviderKeyError } from "./provider-keys";
@@ -21,7 +21,7 @@ async function runGuarded(
 		if (error instanceof MissingProviderKeyError)
 			return badRequest(error.message);
 		logger.error(error, `${label} failed`);
-		return serverError(`${label} failed: ${stringifyError(error)}`);
+		return serverError(`${label} failed: ${errorMessage(error)}`);
 	}
 }
 
