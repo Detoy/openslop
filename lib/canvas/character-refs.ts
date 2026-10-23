@@ -1,3 +1,4 @@
+import { matchSorter } from "match-sorter";
 import { Editor, Range, Transforms } from "slate";
 import { castsCharacters } from "./guards";
 import { makeNodeId } from "./node-utils";
@@ -11,6 +12,10 @@ export const createCharacterRef = (name: string): CharacterRefElement => ({
 });
 
 export type Mention = { range: Range; query: string };
+
+/** Names whose start, a word start, or letters in order match `query`, best first; ties keep the given order. */
+export const matchCharacterNames = (names: string[], query: string) =>
+	matchSorter(names, query, { baseSort: (a, b) => a.index - b.index });
 
 const MENTION = /(?:^|[^\p{L}\p{N}_@])@([^\s@]*)$/u;
 

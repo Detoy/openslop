@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Editor, Transforms } from "slate";
-import { mentionAt } from "../character-refs";
+import { matchCharacterNames, mentionAt } from "../character-refs";
 import { ZERO_WIDTH_SPACE } from "../constants";
 import { SCENE_TYPE, type ContentElement } from "../types";
 import { element, makeEditor } from "./_assets";
@@ -79,5 +79,42 @@ describe("mentionAt", () => {
 		["an @ right after another", element("i", "image", "A field with @@")],
 	])("finds nothing in %s", (_, content) => {
 		expect(mentionAt(caretAtEnd(content))).toBeUndefined();
+	});
+});
+
+describe("matchCharacterNames", () => {
+	const names = ["Grace", "Granny Smith", "Gregory", "Bob"];
+
+	it("lists every character, in their own order, for an empty query", () => {
+		expect(matchCharacterNames(names, "")).toEqual(names);
+	});
+
+	it("finds a name by the start of a later word", () => {
+		expect(matchCharacterNames(names, "smi")).toEqual(["Granny Smith"]);
+	});
+
+	it("finds a name from letters typed with some skipped", () => {
+		expect(matchCharacterNames(["Granny", "Bob"], "grny")).toEqual(["Granny"]);
+	});
+
+	it("ignores case", () => {
+		expect(matchCharacterNames(names, "BOB")).toEqual(["Bob"]);
+	});
+
+	it("ranks names starting with the query above word-start and fuzzy hits", () => {
+		expect(
+			matchCharacterNames(["Old Gran", "Gertrude Rae Annie", "Gran"], "gra"),
+		).toEqual(["Gran", "Old Gran", "Gertrude Rae Annie"]);
+	});
+
+	it("keeps the characters' own order among equally good matches", () => {
+		expect(matchCharacterNames(["Gregory", "Grace"], "gr")).toEqual([
+			"Gregory",
+			"Grace",
+		]);
+	});
+
+	it("lists nothing when no name holds the typed letters in order", () => {
+		expect(matchCharacterNames(names, "zq")).toEqual([]);
 	});
 });
