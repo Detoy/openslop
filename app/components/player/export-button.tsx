@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { formatBytes } from "@/lib/format";
 import { RESOLUTIONS, type Resolution } from "@/lib/render/resolutions";
+import { useQueueSelector } from "@/lib/generation/generation-queue-provider";
 import { useSloppy } from "../sloppy/sloppy-provider";
 import { useLayout } from "./render-layout-context";
 import { useExport } from "./use-export";
@@ -26,12 +27,13 @@ const RESOLUTION_OPTIONS = RESOLUTIONS.map((resolution) => ({
 }));
 
 export function ExportButton() {
-	const { layout, ready } = useLayout();
+	const { layout } = useLayout();
+	const generating = useQueueSelector((q) => q.isBusy());
 	const { loading } = useSloppy();
 	const { state, exportVideo, reset, open, setOpen } = useExport();
 	const [resolution, setResolution] = useState<Resolution>("1080p");
 
-	const disabled = loading || !layout.series.length || !ready;
+	const disabled = loading || !layout.series.length || generating;
 	const isRendering = state.status === "rendering";
 
 	return (
