@@ -15,7 +15,7 @@ import type { BundleFile } from "@/lib/api/asset-bundle";
 import { logger } from "@/lib/api/logger";
 import { BaseProvider, type RawResult } from "../base";
 import { validateByProbe } from "../validate";
-import { pcmDurationSec, wavFromPcm, type PcmFormat } from "../wav";
+import { pcmDurationSec, pcmSilence, wavFromPcm, type PcmFormat } from "../wav";
 import type { TTSProvider, TTSRequest } from "./base";
 import { fetchAllowedVoicePreview } from "./voice-preview";
 import { buildQueryText, rankBySimilarity } from "./voice-similarity";
@@ -62,7 +62,7 @@ const STREAMED_FORMAT: PcmFormat = {
 	channels: 1,
 };
 
-/** Room for a brief pause before the next line, so back-to-back lines sound natural. */
+/** Silence after each line, so back-to-back lines sound natural. */
 const TRAILING_PAUSE_SEC = 1;
 
 const PREVIEW_HOST = "files.cartesia.ai";
@@ -245,14 +245,17 @@ export class CartesiaTTS
 				);
 			}
 
+			const padded = Buffer.concat([
+				pcm,
+				pcmSilence(TRAILING_PAUSE_SEC, STREAMED_FORMAT),
+			]);
 			return {
-				data: wavFromPcm(pcm, STREAMED_FORMAT),
+				data: wavFromPcm(padded, STREAMED_FORMAT),
 				textTimestamps,
 				costUsd: params.prompt.length * USD_PER_CHARACTER,
 				// Word timestamps stop at the last word, and may be absent.
 				metadata: {
-					durationSec:
-						pcmDurationSec(pcm.length, STREAMED_FORMAT) + TRAILING_PAUSE_SEC,
+					durationSec: pcmDurationSec(padded.length, STREAMED_FORMAT),
 				},
 			};
 		} finally {

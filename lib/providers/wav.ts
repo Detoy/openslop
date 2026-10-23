@@ -15,6 +15,11 @@ export function pcmDurationSec(byteLength: number, format: PcmFormat): number {
 	return byteLength / byteRate(format);
 }
 
+/** Zero bytes are silence only in linear PCM, not in mu-law or A-law. */
+export function pcmSilence(sec: number, format: PcmFormat): Buffer {
+	return Buffer.alloc(Math.round(sec * format.sampleRate) * blockAlign(format));
+}
+
 const HEADER_BYTES = 44;
 
 export function wavFromPcm(pcm: Buffer, format: PcmFormat): Buffer {

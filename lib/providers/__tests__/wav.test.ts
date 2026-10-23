@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { audioDurationSec } from "../audio-duration";
-import { pcmDurationSec, wavFromPcm, type PcmFormat } from "../wav";
+import { pcmDurationSec, pcmSilence, wavFromPcm, type PcmFormat } from "../wav";
 
 const FLOAT_MONO: PcmFormat = {
 	audioFormat: 3,
@@ -22,6 +22,15 @@ describe("pcmDurationSec", () => {
 		expect(pcmDurationSec(44100 * 2, FLOAT_MONO)).toBe(0.5);
 		expect(pcmDurationSec(8000 * 2 * 2 * 3, INT_STEREO)).toBe(3);
 		expect(pcmDurationSec(0, FLOAT_MONO)).toBe(0);
+	});
+});
+
+describe("pcmSilence", () => {
+	it("is zeroed samples lasting the requested seconds", () => {
+		const silence = pcmSilence(1.5, INT_STEREO);
+
+		expect(pcmDurationSec(silence.length, INT_STEREO)).toBe(1.5);
+		expect(silence.every((byte) => byte === 0)).toBe(true);
 	});
 });
 

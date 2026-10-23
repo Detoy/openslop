@@ -252,7 +252,7 @@ describe("CartesiaTTS", () => {
 			expect(costUsd).toBeCloseTo(0.299);
 		});
 
-		it("stores the streamed chunks as one WAV file", async () => {
+		it("stores the streamed chunks as one WAV file, then a second of silence", async () => {
 			mockGenerate.mockReturnValue(
 				streamOf([
 					{ type: "chunk", audio: Buffer.from([1, 2, 3, 4]) },
@@ -273,7 +273,12 @@ describe("CartesiaTTS", () => {
 				throw new Error("Expected the audio file to carry its bytes");
 			expect(audio.contentType).toBe("audio/wav");
 			expect(audio.data.toString("latin1", 0, 4)).toBe("RIFF");
-			expect([...audio.data.subarray(44)]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+			expect([...audio.data.subarray(44, 52)]).toEqual([
+				1, 2, 3, 4, 5, 6, 7, 8,
+			]);
+			const tail = audio.data.subarray(52);
+			expect(tail.length).toBe(PCM_BYTES_PER_SEC);
+			expect(tail.every((byte) => byte === 0)).toBe(true);
 		});
 
 		it("reports duration from the audio length, not the last word timestamp", async () => {
