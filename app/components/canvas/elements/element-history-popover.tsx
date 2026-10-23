@@ -57,11 +57,13 @@ function ElementVersionRow({
 	version,
 	label,
 	active,
+	volume,
 	onRestore,
 }: {
 	version: ElementVersion;
 	label: string;
 	active: boolean;
+	volume: number;
 	onRestore: () => void;
 }) {
 	const { audioUrl } = version.result;
@@ -108,7 +110,7 @@ function ElementVersionRow({
 			</div>
 			{audioUrl && (
 				<div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1 [--waveform-height:1.25rem]">
-					<AudioPlayer src={audioUrl} />
+					<AudioPlayer src={audioUrl} volume={volume} />
 				</div>
 			)}
 		</li>
@@ -135,9 +137,12 @@ function LoadingRows() {
  */
 export function ElementHistoryPopover({
 	elementId,
+	volume,
 	onRestore,
 }: {
 	elementId: string;
+	/** Takes play at the element's current gain, as they would sound in the video. */
+	volume: number;
 	onRestore: (version: ElementVersion) => void;
 }) {
 	const loadHistory = useLoadElementHistory();
@@ -171,6 +176,7 @@ export function ElementHistoryPopover({
 				>
 					<ElementVersionList
 						elementId={elementId}
+						volume={volume}
 						onRestore={onRestore}
 						onClose={close}
 					/>
@@ -182,10 +188,12 @@ export function ElementHistoryPopover({
 
 function ElementVersionList({
 	elementId,
+	volume,
 	onRestore,
 	onClose,
 }: {
 	elementId: string;
+	volume: number;
 	onRestore: (version: ElementVersion) => void;
 	onClose: () => void;
 }) {
@@ -237,6 +245,7 @@ function ElementVersionList({
 						version={version}
 						label={String(index + 1)}
 						active={index === activeIndex}
+						volume={volume}
 						onRestore={() => restore(version)}
 					/>
 				))
