@@ -22,12 +22,14 @@ import {
 
 export function AudioResult({
 	src,
+	volume,
 	status,
 	startedAt,
 	topRight,
 }: GenerationState &
 	PreviewOverlays & {
 		src: string;
+		volume?: number;
 	}) {
 	return (
 		<div className="group relative flex w-full min-h-16 flex-col gap-1 overflow-hidden rounded-lg border border-border bg-element-card px-2 py-1.5">
@@ -42,7 +44,7 @@ export function AudioResult({
 						className="shrink-0"
 					/>
 				)}
-				<AudioPlayer key={src} src={src} />
+				<AudioPlayer key={src} src={src} volume={volume} />
 			</div>
 		</div>
 	);

@@ -8,6 +8,7 @@ import {
 } from "@/lib/canvas/element-connector";
 import type { AttributeSpec } from "@/lib/connectors/attributes/schema";
 import { splitTextDirection } from "../utils/text-direction";
+import { getVolumeGain } from "@/lib/canvas/element-attributes";
 import { OutputPreview } from "./output-preview";
 import { DeleteButton } from "./delete-button";
 import { DuplicateButton } from "./duplicate-button";
@@ -188,7 +189,10 @@ export function ElementContainer({
 					className="flex-1 min-w-0 flex items-center select-none"
 					contentEditable={false}
 				>
-					<OutputPreview outputKind={config.outputKind} />
+					<OutputPreview
+						outputKind={config.outputKind}
+						volume={getVolumeGain(element)}
+					/>
 				</div>
 			</div>
 		</ElementGenerationProvider>
