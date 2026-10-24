@@ -2,8 +2,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { Transforms } from "slate";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { mountOnCanvas } from "../../../__tests__/_mount";
 import { AudioResultPreview } from "../audio-result-preview";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -11,45 +12,59 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 vi.mock("@/lib/components/use-peaks", () => ({
 	usePeaks: () => ({ status: "ready", peaks: [] }),
 }));
+vi.mock("../../element-generation-context", () => ({
+	useElementGeneration: () => ({ node: { id: "el-1" } }),
+}));
 
-const container = document.body.appendChild(document.createElement("div"));
-let root: Root;
+let canvas: ReturnType<typeof mountOnCanvas>;
 
 beforeEach(() => {
-	root = createRoot(container);
+	canvas = mountOnCanvas([
+		{
+			id: "el-1",
+			type: "sound",
+			layoutAttributes: { volume: "2" },
+			children: [{ id: "el-1-t", type: "sound", text: "door slam" }],
+		},
+	]);
+	canvas.render(
+		<TooltipProvider>
+			<AudioResultPreview
+				status="idle"
+				startedAt={null}
+				error={null}
+				onDiscard={() => {}}
+				result={{ audioUrl: "https://audio/sfx.mp3", durationSec: 2 }}
+			/>
+		</TooltipProvider>,
+	);
 });
 
-afterEach(() => act(() => root.unmount()));
+afterEach(() => canvas.unmount());
 
-function render(volume: number) {
-	act(() =>
-		root.render(
-			<TooltipProvider>
-				<AudioResultPreview
-					status="idle"
-					startedAt={null}
-					error={null}
-					onDiscard={() => {}}
-					result={{ audioUrl: "https://audio/sfx.mp3", durationSec: 2 }}
-					volume={volume}
-				/>
-			</TooltipProvider>,
-		),
-	);
-	const audio = container.querySelector("audio");
-	if (!audio) throw new Error("no audio rendered");
-	return audio;
-}
+const audio = () => {
+	const found = document.body.querySelector("audio");
+	if (!found) throw new Error("no audio rendered");
+	return found;
+};
 
 describe("AudioResultPreview", () => {
 	it("plays the result at the element's volume, the gain the player applies", () => {
-		expect(render(0.2).volume).toBe(0.2);
+		expect(audio().volume).toBe(0.2);
 	});
 
-	it("applies a volume change to the audio already playing", () => {
-		const playing = render(0.2);
+	it("applies a volume change to the audio already playing", async () => {
+		const playing = audio();
 
-		expect(render(0.9)).toBe(playing);
+		await act(async () =>
+			Transforms.setNodes(
+				canvas.editor,
+				{ layoutAttributes: { volume: "9" } },
+				{ at: [0] },
+			),
+		);
+
+		expect(audio()).toBe(playing);
 		expect(playing.volume).toBe(0.9);
 	});
 });

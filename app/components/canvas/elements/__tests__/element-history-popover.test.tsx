@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
+import { Transforms } from "slate";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { inputsFor } from "@/lib/generation/__tests__/_graph";
 import type { ElementVersion } from "@/lib/generation/versions";
@@ -29,18 +30,21 @@ let canvas: ReturnType<typeof mountOnCanvas>;
 beforeEach(() => {
 	loadHistory.mockClear();
 	history = { versions: [], status: "failed", activeIndex: -1 };
-	canvas = mountOnCanvas();
-	renderPopover(1);
+	canvas = mountOnCanvas([
+		{
+			id: "el-1",
+			type: "sound",
+			layoutAttributes: { volume: "4" },
+			children: [{ id: "el-1-t", type: "sound", text: "door slam" }],
+		},
+	]);
+	renderPopover();
 });
 
-function renderPopover(volume: number) {
+function renderPopover() {
 	canvas.render(
 		<TooltipProvider>
-			<ElementHistoryPopover
-				elementId="el-1"
-				volume={volume}
-				onRestore={() => {}}
-			/>
+			<ElementHistoryPopover elementId="el-1" onRestore={() => {}} />
 		</TooltipProvider>,
 	);
 }
@@ -80,13 +84,19 @@ describe("ElementHistoryPopover", () => {
 			status: "ready",
 			activeIndex: 1,
 		};
-		renderPopover(0.4);
+		renderPopover();
 		await click('button[aria-label="Generation history"]');
 
 		const takes = () => Array.from(document.body.querySelectorAll("audio"));
 		expect(takes().map((audio) => audio.volume)).toEqual([0.4, 0.4]);
 
-		renderPopover(0.8);
+		await act(async () =>
+			Transforms.setNodes(
+				canvas.editor,
+				{ layoutAttributes: { volume: "8" } },
+				{ at: [0] },
+			),
+		);
 		expect(takes().map((audio) => audio.volume)).toEqual([0.8, 0.8]);
 	});
 });
