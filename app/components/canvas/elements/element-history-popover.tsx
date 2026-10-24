@@ -21,6 +21,7 @@ import {
 	useElementHistory,
 	useLoadElementHistory,
 } from "../hooks/use-element-history";
+import { useVolumeGain } from "../hooks/use-volume-gain";
 import { AudioPlayer } from "./audio-player";
 import { HeaderIconButton } from "./header-icon-button";
 import { MediaWithSkeleton } from "@/lib/components/media-with-skeleton";
@@ -57,16 +58,15 @@ function ElementVersionRow({
 	version,
 	label,
 	active,
-	volume,
 	onRestore,
 }: {
 	version: ElementVersion;
 	label: string;
 	active: boolean;
-	volume: number;
 	onRestore: () => void;
 }) {
 	const { audioUrl } = version.result;
+	const volume = useVolumeGain(version.elementId);
 	return (
 		<li
 			aria-current={active}
@@ -137,12 +137,9 @@ function LoadingRows() {
  */
 export function ElementHistoryPopover({
 	elementId,
-	volume,
 	onRestore,
 }: {
 	elementId: string;
-	/** Takes play at the element's current gain, as they would sound in the video. */
-	volume: number;
 	onRestore: (version: ElementVersion) => void;
 }) {
 	const loadHistory = useLoadElementHistory();
@@ -176,7 +173,6 @@ export function ElementHistoryPopover({
 				>
 					<ElementVersionList
 						elementId={elementId}
-						volume={volume}
 						onRestore={onRestore}
 						onClose={close}
 					/>
@@ -188,12 +184,10 @@ export function ElementHistoryPopover({
 
 function ElementVersionList({
 	elementId,
-	volume,
 	onRestore,
 	onClose,
 }: {
 	elementId: string;
-	volume: number;
 	onRestore: (version: ElementVersion) => void;
 	onClose: () => void;
 }) {
@@ -245,7 +239,6 @@ function ElementVersionList({
 						version={version}
 						label={String(index + 1)}
 						active={index === activeIndex}
-						volume={volume}
 						onRestore={() => restore(version)}
 					/>
 				))

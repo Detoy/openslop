@@ -3,7 +3,6 @@
 import { useCallback } from "react";
 import { useSlateStatic } from "slate-react";
 import { applyElementVersion } from "@/lib/canvas/editor-ops";
-import { getVolumeGain } from "@/lib/canvas/element-attributes";
 import type { CanvasElement } from "@/lib/canvas/types";
 import type { ElementVersion } from "@/lib/generation/versions";
 import { ElementHistoryPopover } from "./element-history-popover";
@@ -16,11 +15,5 @@ export function ElementHistoryButton({ element }: { element: CanvasElement }) {
 		[editor, element.id],
 	);
 
-	return (
-		<ElementHistoryPopover
-			elementId={element.id}
-			volume={getVolumeGain(element)}
-			onRestore={restore}
-		/>
-	);
+	return <ElementHistoryPopover elementId={element.id} onRestore={restore} />;
 }

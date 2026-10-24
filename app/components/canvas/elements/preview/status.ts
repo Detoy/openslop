@@ -15,6 +15,4 @@ export type PreviewOverlays = {
 export type ElementPreviewProps = PlaceholderProps &
 	PreviewOverlays & {
 		result: ElementSnapshot["result"];
-		/** Playback gain for audio output, 0 to 1, from the element's Volume. */
-		volume?: number;
 	};
