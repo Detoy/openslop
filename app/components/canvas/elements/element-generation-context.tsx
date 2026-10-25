@@ -5,7 +5,9 @@ import { createRequiredContext } from "@/lib/components/create-required-context"
 import type { GeneratedElement } from "@/lib/canvas/types";
 import { useGenerate } from "../hooks/use-generate";
 
-type ElementGeneration = ReturnType<typeof useGenerate>;
+type ElementGeneration = ReturnType<typeof useGenerate> & {
+	element: GeneratedElement;
+};
 
 const [ElementGenerationContext, useElementGeneration] =
 	createRequiredContext<ElementGeneration>("ElementGenerationContext");
@@ -21,7 +23,7 @@ export function ElementGenerationProvider({
 }) {
 	const generation = useGenerate(element);
 	return (
-		<ElementGenerationContext value={generation}>
+		<ElementGenerationContext value={{ ...generation, element }}>
 			{children}
 		</ElementGenerationContext>
 	);

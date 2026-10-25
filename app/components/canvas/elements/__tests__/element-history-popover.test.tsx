@@ -2,7 +2,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
-import { Transforms } from "slate";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { inputsFor } from "@/lib/generation/__tests__/_graph";
 import type { ElementVersion } from "@/lib/generation/versions";
@@ -21,6 +20,10 @@ vi.mock("../../hooks/use-element-history", () => ({
 vi.mock("@/lib/components/use-peaks", () => ({
 	usePeaks: () => ({ status: "ready", peaks: [] }),
 }));
+let element: { layoutAttributes: { volume: string } };
+vi.mock("../element-generation-context", () => ({
+	useElementGeneration: () => ({ element }),
+}));
 vi.mock("@/lib/generation/generation-queue-provider", () => ({
 	useGenerationQueue: () => ({ restoreResult: vi.fn() }),
 }));
@@ -30,14 +33,8 @@ let canvas: ReturnType<typeof mountOnCanvas>;
 beforeEach(() => {
 	loadHistory.mockClear();
 	history = { versions: [], status: "failed", activeIndex: -1 };
-	canvas = mountOnCanvas([
-		{
-			id: "el-1",
-			type: "sound",
-			layoutAttributes: { volume: "4" },
-			children: [{ id: "el-1-t", type: "sound", text: "door slam" }],
-		},
-	]);
+	element = { layoutAttributes: { volume: "4" } };
+	canvas = mountOnCanvas();
 	renderPopover();
 });
 
@@ -90,13 +87,8 @@ describe("ElementHistoryPopover", () => {
 		const takes = () => Array.from(document.body.querySelectorAll("audio"));
 		expect(takes().map((audio) => audio.volume)).toEqual([0.4, 0.4]);
 
-		await act(async () =>
-			Transforms.setNodes(
-				canvas.editor,
-				{ layoutAttributes: { volume: "8" } },
-				{ at: [0] },
-			),
-		);
+		element = { layoutAttributes: { volume: "8" } };
+		renderPopover();
 		expect(takes().map((audio) => audio.volume)).toEqual([0.8, 0.8]);
 	});
 });

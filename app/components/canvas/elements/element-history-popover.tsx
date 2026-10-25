@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SimpleTooltip } from "@/components/ui/tooltip";
+import { getVolumeGain } from "@/lib/canvas/element-attributes";
 import { truncateMiddle } from "@/lib/format";
 import { useGenerationQueue } from "@/lib/generation/generation-queue-provider";
 import { versionKey, type ElementVersion } from "@/lib/generation/versions";
@@ -21,8 +22,8 @@ import {
 	useElementHistory,
 	useLoadElementHistory,
 } from "../hooks/use-element-history";
-import { useVolumeGain } from "../hooks/use-volume-gain";
 import { AudioPlayer } from "./audio-player";
+import { useElementGeneration } from "./element-generation-context";
 import { HeaderIconButton } from "./header-icon-button";
 import { MediaWithSkeleton } from "@/lib/components/media-with-skeleton";
 
@@ -66,7 +67,7 @@ function ElementVersionRow({
 	onRestore: () => void;
 }) {
 	const { audioUrl } = version.result;
-	const volume = useVolumeGain(version.elementId);
+	const volume = getVolumeGain(useElementGeneration().element);
 	return (
 		<li
 			aria-current={active}
