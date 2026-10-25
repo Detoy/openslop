@@ -10,6 +10,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { selectTriggerClassName } from "@/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface SelectMenuOption<T extends string> {
@@ -115,6 +120,7 @@ export function SelectMenu<T extends string>({
 	children,
 	side = "bottom",
 	align = "start",
+	tooltip,
 	contentClassName,
 	itemClassName,
 }: {
@@ -124,29 +130,43 @@ export function SelectMenu<T extends string>({
 	children: ReactNode;
 	side?: "top" | "bottom";
 	align?: "start" | "center" | "end";
+	tooltip?: ReactNode;
 	contentClassName?: string;
 	itemClassName?: string;
 }) {
 	return (
-		<DropdownMenu modal={false}>
-			<DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-			<DropdownMenuContent
-				side={side}
-				align={align}
-				className={cn("min-w-32", contentClassName)}
-			>
-				{options.map((option) => (
-					<SelectMenuItem
-						key={option.value}
-						selected={option.value === value}
-						onSelect={() => onChange(option.value)}
-						className={itemClassName}
-					>
-						{option.icon}
-						{option.label}
-					</SelectMenuItem>
-				))}
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<Tooltip>
+			<DropdownMenu modal={false}>
+				<DropdownMenuTrigger asChild>
+					{tooltip ? (
+						<TooltipTrigger asChild>{children}</TooltipTrigger>
+					) : (
+						children
+					)}
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					side={side}
+					align={align}
+					className={cn("min-w-32", contentClassName)}
+				>
+					{options.map((option) => (
+						<SelectMenuItem
+							key={option.value}
+							selected={option.value === value}
+							onSelect={() => onChange(option.value)}
+							className={itemClassName}
+						>
+							{option.icon}
+							{option.label}
+						</SelectMenuItem>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
+			{tooltip && (
+				<TooltipContent side={side === "bottom" ? "top" : "bottom"}>
+					{tooltip}
+				</TooltipContent>
+			)}
+		</Tooltip>
 	);
 }
