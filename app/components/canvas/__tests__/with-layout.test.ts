@@ -3,6 +3,7 @@ import { createEditor, Editor, Node, Transforms, type Descendant } from "slate";
 import { withReact } from "slate-react";
 import type { ConnectorModels } from "@/lib/connectors/models";
 import { asset } from "@/lib/canvas/__tests__/_assets";
+import { ZERO_WIDTH_SPACE } from "@/lib/canvas/constants";
 import { withLayout } from "../plugins/with-layout";
 import { content, scene } from "./fixtures";
 
@@ -50,6 +51,6 @@ describe("withLayout", () => {
 		editor.insertSoftBreak();
 
 		expect(editor.children).toHaveLength(1);
-		expect(Node.string(editor.children[0])).toBe("hello\n");
+		expect(Node.string(editor.children[0])).toBe(`hello\n${ZERO_WIDTH_SPACE}`);
 	});
 });
