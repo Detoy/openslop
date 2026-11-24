@@ -35,7 +35,7 @@ const toSetOp = ({ span, duration }: DurationFit) => ({
 
 /** The visuals asked for, and the ids that named none of them. */
 const scopeTo = (spans: VisualSpan[], ids?: string[]) => {
-	if (!ids) return { scoped: spans, unknown: [] };
+	if (!ids?.length) return { scoped: spans, unknown: [] };
 	const wanted = new Set(ids);
 	const scoped = spans.filter((span) => wanted.has(span.id));
 	const found = new Set(scoped.map((span) => span.id));
@@ -68,7 +68,7 @@ export const fitDurations = defineTool({
 	  speech under them have nothing to fit, so all three are left alone.
 	`,
 	input: z.object({
-		element_ids: z.array(z.string()).min(1).optional(),
+		element_ids: z.array(z.string()).optional(),
 	}),
 	output: z.string(),
 	icon: Hourglass,
